@@ -1,0 +1,31 @@
+{
+    "manifest_version": 3,
+    "name": "EXV",
+    "version": "0.0.1",
+    "action": {
+        "default_popup": "popup.html"
+    },
+    "background": {
+        "service_worker": "background.js"
+    },
+    "content_scripts": [
+        {
+            "run_at": "document_idle",
+            "js": [
+                "content.js"
+            ],
+            "matches": [
+                "http://localhost:4321/*"
+            ]
+        }
+    ],
+    "permissions": [
+        "activeTab",
+        "tabs",
+        "scripting",
+        "storage"
+    ],
+    "host_permissions": [
+        "<all_urls>"
+    ]
+}
