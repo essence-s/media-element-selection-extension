@@ -96,7 +96,8 @@ dataVideos.addEventListener('click', (e) => {
                 data: { idNumber: dataG.imgNumber }
             }, (response) => {
                 if (chrome.runtime.lastError) {
-                    console.log('error remove')
+                    console.log('error remove', chrome.runtime.lastError.message)
+                    funExec()
                 } else {
                     if (response == 'ok') {
                         funExec()

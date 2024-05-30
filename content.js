@@ -1,38 +1,43 @@
-let isApply = false
+// let isApply = false
 
-function handlePlay() {
-    if (isApply) return isApply = false
-    chrome.runtime.sendMessage({
-        cmd: 'element-action',
-        data: {
-            action: 'play',
-            status: 'sending'
-        }
-    })
+function handlePlay(event) {
+    console.log(event)
+    setTimeout(() => {
+        chrome.runtime.sendMessage({
+            cmd: 'element-action',
+            data: {
+                action: 'play',
+                status: 'sending'
+            }
+        })
+    }, 1000)
 }
-function handlePause() {
-    if (isApply) return isApply = false
-    chrome.runtime.sendMessage({
-        cmd: 'element-action',
-        data: {
-            action: 'pause',
-            status: 'sending'
-        }
-    });
+function handlePause(event) {
+    console.log(event)
+    setTimeout(() => {
+        chrome.runtime.sendMessage({
+            cmd: 'element-action',
+            data: {
+                action: 'pause',
+                status: 'sending'
+            }
+        });
+    }, 1000)
 }
 
 function handleSeeking(event) {
     console.log(event)
-    if (isApply) return isApply = false
+    // if (isApply) return isApply = false
     setTimeout(() => {
         chrome.runtime.sendMessage({
             cmd: 'element-action',
             data: {
                 action: 'seeked',
-                status: 'sending'
+                status: 'sending',
+                mediaCurrentTime: event.target.currentTime
             }
         });
-    }, 3000)
+    }, 1000)
 
 }
 
@@ -48,6 +53,21 @@ function removeEventsElement(element) {
     element.removeEventListener("seeking", handleSeeking)
     element.removeEventListener("play", handlePlay)
     element.removeEventListener("pause", handlePause)
+}
+
+function notGenerateEvent(targetElement, eventElement, functionElement, callback) {
+    if (eventElement == 'pause' && targetElement.paused == true) return
+    if (eventElement == 'play' && targetElement.paused == false) return
+
+    targetElement.removeEventListener(eventElement, functionElement)
+    const eventG = () => {
+        targetElement.addEventListener(eventElement, functionElement)
+        targetElement.removeEventListener(eventElement, eventG)
+        console.log(8)
+    }
+    // console.log('no generate event')
+    targetElement.addEventListener(eventElement, eventG)
+    callback()
 }
 
 
@@ -132,14 +152,19 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             console.log('recived ult 567', request)
             let foundElementVideo = foundVideos.find(d => d.number == request.data.idNumber)
             if (foundElementVideo) {
-                isApply = true
+                let mediaElement = foundElementVideo.element
                 if (request.data.action == 'play') {
-                    foundElementVideo.element.play()
+                    notGenerateEvent(mediaElement, 'play', handlePlay, () => {
+                        foundElementVideo.element.play()
+                    })
                 } else if (request.data.action == 'pause') {
-                    foundElementVideo.element.pause()
+                    notGenerateEvent(mediaElement, 'pause', handlePause, () => {
+                        foundElementVideo.element.pause()
+                    })
                 } else if (request.data.action == 'seeked') {
-                    foundElementVideo.element.currentTime = Math.max(0, foundElementVideo.element.currentTime + 5)
-
+                    notGenerateEvent(mediaElement, 'seeking', handleSeeking, () => {
+                        mediaElement.currentTime = Math.max(0, request.data.mediaCurrentTime)
+                    })
                 }
 
             }
@@ -184,8 +209,9 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         }
         sendResponse('ok')
     } else if (request.cmd == 'removeEventsElement') {
-        let foundElementVideo = foundVideos.find(d => d.number == request.data.idNumber)
         console.log('Remove Events', request)
+        let foundElementVideo = foundVideos.find(d => d.number == request.data.idNumber)
+
         if (foundElementVideo) {
             removeEventsElement(foundElementVideo.element)
         }
