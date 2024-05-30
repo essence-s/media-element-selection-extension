@@ -15,7 +15,8 @@
                 "content.js"
             ],
             "matches": [
-                "http://localhost:4321/*"
+                "http://localhost:4321/*",
+                "https://ahiseve.vercel.app/"
             ]
         }
     ],
