@@ -2,42 +2,42 @@
 
 function handlePlay(event) {
     console.log(event)
-    setTimeout(() => {
-        chrome.runtime.sendMessage({
-            cmd: 'element-action',
-            data: {
-                action: 'play',
-                status: 'sending'
-            }
-        })
-    }, 1000)
+    // setTimeout(() => {
+    chrome.runtime.sendMessage({
+        cmd: 'element-action',
+        data: {
+            action: 'play',
+            status: 'sending'
+        }
+    })
+    // }, 1000)
 }
 function handlePause(event) {
     console.log(event)
-    setTimeout(() => {
-        chrome.runtime.sendMessage({
-            cmd: 'element-action',
-            data: {
-                action: 'pause',
-                status: 'sending'
-            }
-        });
-    }, 1000)
+    // setTimeout(() => {
+    chrome.runtime.sendMessage({
+        cmd: 'element-action',
+        data: {
+            action: 'pause',
+            status: 'sending'
+        }
+    });
+    // }, 1000)
 }
 
 function handleSeeking(event) {
     console.log(event)
     // if (isApply) return isApply = false
-    setTimeout(() => {
-        chrome.runtime.sendMessage({
-            cmd: 'element-action',
-            data: {
-                action: 'seeked',
-                status: 'sending',
-                mediaCurrentTime: event.target.currentTime
-            }
-        });
-    }, 1000)
+    // setTimeout(() => {
+    chrome.runtime.sendMessage({
+        cmd: 'element-action',
+        data: {
+            action: 'seeked',
+            status: 'sending',
+            mediaCurrentTime: event.target.currentTime
+        }
+    });
+    // }, 1000)
 
 }
 
