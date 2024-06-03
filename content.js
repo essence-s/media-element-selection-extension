@@ -86,7 +86,7 @@ window.addEventListener("message", function (event) {
                 chrome.runtime.sendMessage({ cmd: cmd, data: data });
             }
         }
-    } else if (cmd && (cmd == "checkElementVideoSelected")) {
+    } else if (cmd == "checkElementVideoSelected") {
         chrome.runtime.sendMessage({ cmd: 'checkElementVideoSelected', data });
     }
 
@@ -163,7 +163,11 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                     })
                 } else if (request.data.action == 'seeked') {
                     notGenerateEvent(mediaElement, 'seeking', handleSeeking, () => {
-                        mediaElement.currentTime = Math.max(0, request.data.mediaCurrentTime)
+                        if (request.data.dataSeek) {
+                            mediaElement.currentTime = Math.max(0, mediaElement.currentTime - request.data.dataSeek)
+                        } else {
+                            mediaElement.currentTime = Math.max(0, request.data.mediaCurrentTime)
+                        }
                     })
                 }
 
