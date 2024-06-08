@@ -1,35 +1,66 @@
 let dataG = {
     tabId: '',
     imgNumber: '',
-    imgCover: ''
+    imgCover: '',
+    favIconUrl: ''
 }
 
 let dataLS = localStorage.getItem('dataG')
 if (dataLS) {
     dataG = JSON.parse(dataLS)
-    renderSelectedVideoElement(dataSaveVideo)
+    chrome.tabs.sendMessage(parseInt(dataG.tabId), { cmd: 'checkConnection' }, (response) => {
+        if (chrome.runtime.lastError) {
+            console.log('Error al enviar mensaje:', chrome.runtime.lastError.message);
+            renderSelectedVideoElement(dataSaveVideo, 'no-connect')
+        } else if (response == 'connected') {
+            renderSelectedVideoElement(dataSaveVideo)
+        }
+    })
+
+
 }
 
-function renderSelectedVideoElement(element) {
+function renderSelectedVideoElement(element, nc) {
+    if (nc == 'no-connect') {
+        element.classList.add('no-conect')
+    } else {
+        element.classList.remove('no-conect')
+    }
+    // Video Seleccionado
+    // ID Page: ${dataG.tabId}
     element.innerHTML = `
-        Video Seleccinado :
-        ID Page: ${dataG.tabId}
-        Cover Video : ${dataG.imgNumber}
+        <p>
+            Video Seleccionado
+            <img src='${dataG.favIconUrl}' crossorigin="anonymous" class="data-save-img-icon" />
+        </p>
         <img src=${dataG.imgCover} class='img-option'> 
     `
+
 }
 
-getdata.addEventListener('click', () => {
+// getdata.addEventListener('click', () => {
+setTimeout(() => {
     chrome.tabs.query({}, function (tabs) {
-        dataTabs.innerHTML = tabs.map(tab => {
-            return `<div class="tab-title" dataID='${tab.id}'>${tab.title}</div >`
-        }).join('');
+        try {
+            // console.log(tabs)
+            dataTabs.innerHTML = tabs.map(tab => {
+                return `<div class="tab-title" dataID='${tab.id}'>
+                    <img src='${tab.favIconUrl}' crossorigin="anonymous" /> ${tab.title}
+                </div >`
+            }).join('')
+        } catch (e) {
+            console.log(e)
+        }
     })
-})
+}, 100)
+
+// })
 
 dataTabs.addEventListener('click', (e) => {
     if (e.target.classList.contains('tab-title')) {
         let tabId = e.target.getAttribute('dataID')
+        // console.log('dddp')
+        window.location.href = '#dataVideos'
         chrome.tabs.sendMessage(parseInt(tabId), { data: 'getVideosData' }, (response) => {
             if (chrome.runtime.lastError) {
                 // console.log(chrome.runtime.lastError)
@@ -37,7 +68,7 @@ dataTabs.addEventListener('click', (e) => {
                 chrome.scripting.executeScript({
                     target: {
                         tabId: parseInt(tabId),
-                        // allFrames: true
+                        allFrames: true
                     },
                     files: ["content.js"],
                 }).then(() => {
@@ -75,16 +106,21 @@ dataVideos.addEventListener('click', (e) => {
             dataG.imgNumber = e.target.getAttribute('imgNumber')
             dataG.imgCover = e.target.src
             dataG.tabId = e.target.getAttribute('tabId')
-            console.log(e.target)
+            chrome.tabs.get(parseInt(e.target.getAttribute('tabId')), function (tab) {
+                // console.log(tab.favIconUrl)
+                dataG.favIconUrl = tab.favIconUrl
 
-            localStorage.setItem('dataG', JSON.stringify(dataG))
-            chrome.runtime.sendMessage({ cmd: 'updateDataG', data: dataG });
-            renderSelectedVideoElement(dataSaveVideo)
+                // console.log(e.target)
 
-            // mandar señal para agregar eventos al element
-            chrome.tabs.sendMessage(parseInt(dataG.tabId), {
-                cmd: 'addEventsElement',
-                data: { idNumber: dataG.imgNumber }
+                localStorage.setItem('dataG', JSON.stringify(dataG))
+                chrome.runtime.sendMessage({ cmd: 'updateDataG', data: dataG });
+                renderSelectedVideoElement(dataSaveVideo)
+
+                // mandar señal para agregar eventos al element
+                chrome.tabs.sendMessage(parseInt(dataG.tabId), {
+                    cmd: 'addEventsElement',
+                    data: { idNumber: dataG.imgNumber }
+                })
             })
         }
 
@@ -117,9 +153,9 @@ let dataImgGlobal = []
 
 chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
-        console.log(request)
+        // console.log(request)
         if (request.cmd == 'responseIMGS') {
-            console.log(sender)
+            // console.log(sender)
             dataImgGlobal.push(request.data.map(element => {
                 return {
                     ...element,

@@ -220,6 +220,8 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
             removeEventsElement(foundElementVideo.element)
         }
         sendResponse('ok')
+    } else if (request.cmd == 'checkConnection') {
+        sendResponse('connected')
     }
     // sendResponse('ok')
     return true
@@ -230,4 +232,4 @@ chrome.runtime.sendMessage({ data: "Mensaje desde la página" }, (response) => {
     console.log(response);
 });
 
-console.log('limon')
+console.log('media-element-selection-extension')
