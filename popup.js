@@ -98,6 +98,26 @@ function renderResponseImgs(request) {
     }).join('')
 }
 
+function resultCheckElementVideoSelected() {
+    let sendData = {
+        selected: false
+    }
+
+    if (Object.keys(dataG).length != 0) {
+        sendData = {
+            selected: true,
+        }
+    }
+
+    chrome.tabs.query({ url: ['https://ahiseve.vercel.app/*', 'http://localhost:4321/*'] }, (tabs) => {
+        tabs.forEach(tab => {
+            chrome.tabs.sendMessage(tab.id, {
+                cmd: 'resultCheckElementVideoSelected',
+                data: sendData
+            });
+        })
+    })
+}
 
 dataVideos.addEventListener('click', (e) => {
     if (e.target.classList.contains('img-option')) {
@@ -109,7 +129,6 @@ dataVideos.addEventListener('click', (e) => {
             chrome.tabs.get(parseInt(e.target.getAttribute('tabId')), function (tab) {
                 // console.log(tab.favIconUrl)
                 dataG.favIconUrl = tab.favIconUrl
-
                 // console.log(e.target)
 
                 localStorage.setItem('dataG', JSON.stringify(dataG))
@@ -121,6 +140,8 @@ dataVideos.addEventListener('click', (e) => {
                     cmd: 'addEventsElement',
                     data: { idNumber: dataG.imgNumber }
                 })
+
+                resultCheckElementVideoSelected()
             })
         }
 

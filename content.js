@@ -195,7 +195,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         // console.log(foundVideos)
         sendResponse('ok')
     } else if (request.cmd == 'resultCheckElementVideoSelected') {
-        // console.log('ok:request', request)
+        console.log('ok:request', request)
         window.postMessage(
             {
                 cmd: "resultCheckElementVideoSelected",
