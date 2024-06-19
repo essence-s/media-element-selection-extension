@@ -68,7 +68,7 @@ dataTabs.addEventListener('click', (e) => {
                 chrome.scripting.executeScript({
                     target: {
                         tabId: parseInt(tabId),
-                        allFrames: true
+                        // allFrames: true
                     },
                     files: ["content.js"],
                 }).then(() => {
