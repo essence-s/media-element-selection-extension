@@ -1,7 +1,26 @@
 // let isApply = false
 
+function eventQueue() {
+    let events = []
+    let executing = false
+
+    const addEvent = async (event) => {
+        events.push(event)
+        if (!executing) {
+            executing = true
+            while (events.length) {
+                await events.shift()()
+            }
+            executing = false
+        }
+    }
+    return addEvent
+}
+
+let queue = eventQueue()
+
 function handlePlay(event) {
-    console.log(event)
+    // console.log(event)
     // setTimeout(() => {
     chrome.runtime.sendMessage({
         cmd: 'element-action',
@@ -13,7 +32,7 @@ function handlePlay(event) {
     // }, 1000)
 }
 function handlePause(event) {
-    console.log(event)
+    // console.log(event)
     // setTimeout(() => {
     chrome.runtime.sendMessage({
         cmd: 'element-action',
@@ -26,7 +45,7 @@ function handlePause(event) {
 }
 
 function handleSeeking(event) {
-    console.log(event)
+    // console.log(event)
     // if (isApply) return isApply = false
     // setTimeout(() => {
     chrome.runtime.sendMessage({
@@ -37,7 +56,7 @@ function handleSeeking(event) {
             mediaCurrentTime: event.target.currentTime
         }
     });
-    // }, 1000)
+    // }, 3000)
 
 }
 
@@ -56,18 +75,22 @@ function removeEventsElement(element) {
 }
 
 function notGenerateEvent(targetElement, eventElement, functionElement, callback) {
-    if (eventElement == 'pause' && targetElement.paused == true) return
-    if (eventElement == 'play' && targetElement.paused == false) return
 
-    targetElement.removeEventListener(eventElement, functionElement)
-    const eventG = () => {
-        targetElement.addEventListener(eventElement, functionElement)
-        targetElement.removeEventListener(eventElement, eventG)
-        console.log(8)
-    }
-    // console.log('no generate event')
-    targetElement.addEventListener(eventElement, eventG)
-    callback()
+    return new Promise((resolve) => {
+        if (eventElement == 'pause' && targetElement.paused == true) return resolve('no genero evento con exito')
+        if (eventElement == 'play' && targetElement.paused == false) return resolve('no genero evento con exito')
+
+        targetElement.removeEventListener(eventElement, functionElement)
+        const eventG = () => {
+            targetElement.addEventListener(eventElement, functionElement)
+            targetElement.removeEventListener(eventElement, eventG)
+            // console.log(8)
+            resolve('no genero evento con exito')
+        }
+        // console.log('no generate event')
+        targetElement.addEventListener(eventElement, eventG)
+        callback()
+    })
 }
 
 
@@ -77,7 +100,7 @@ window.addEventListener("message", function (event) {
 
     if (cmd == 'element-action') {
         if (data.status == 'received') {
-            console.log('llego desdepagina recived')
+            // console.log('llego desdepagina recived')
             if (data.action == 'play') {
                 chrome.runtime.sendMessage({ cmd: cmd, data: data });
             } else if (data.action == 'pause') {
@@ -137,7 +160,7 @@ function getVideosPage() {
     });
 
     foundVideos = arrayvideos
-    console.log(arrayvideos)
+    // console.log(arrayvideos)
 
     return arrayvideos.map(v => ({ number: v.number, img: v.img }))
 }
@@ -149,25 +172,32 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.cmd == 'element-action') {
 
         if (request.data.status == 'received') {
-            console.log('recived ult 567', request)
+            // console.log('recived ult 567', request)
             let foundElementVideo = foundVideos.find(d => d.number == request.data.idNumber)
             if (foundElementVideo) {
                 let mediaElement = foundElementVideo.element
                 if (request.data.action == 'play') {
-                    notGenerateEvent(mediaElement, 'play', handlePlay, () => {
-                        foundElementVideo.element.play()
+                    queue(async () => {
+                        await notGenerateEvent(mediaElement, 'play', handlePlay, () => {
+                            foundElementVideo.element.play()
+                        })
                     })
+
                 } else if (request.data.action == 'pause') {
-                    notGenerateEvent(mediaElement, 'pause', handlePause, () => {
-                        foundElementVideo.element.pause()
+                    queue(async () => {
+                        await notGenerateEvent(mediaElement, 'pause', handlePause, () => {
+                            foundElementVideo.element.pause()
+                        })
                     })
                 } else if (request.data.action == 'seeked') {
-                    notGenerateEvent(mediaElement, 'seeking', handleSeeking, () => {
-                        if (request.data.dataSeek) {
-                            mediaElement.currentTime = Math.max(0, mediaElement.currentTime + request.data.dataSeek)
-                        } else {
-                            mediaElement.currentTime = Math.max(0, request.data.mediaCurrentTime)
-                        }
+                    queue(async () => {
+                        await notGenerateEvent(mediaElement, 'seeking', handleSeeking, () => {
+                            if (request.data.dataSeek) {
+                                mediaElement.currentTime = Math.max(0, mediaElement.currentTime + request.data.dataSeek)
+                            } else {
+                                mediaElement.currentTime = Math.max(0, request.data.mediaCurrentTime)
+                            }
+                        })
                     })
                 }
 
@@ -190,12 +220,12 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         let dataImageVideos = getVideosPage()
         // console.log(dataImageVideos)
         chrome.runtime.sendMessage({ cmd: 'responseIMGS', data: dataImageVideos }, function (response) {
-            console.log(response);
+            // console.log(response);
         });
         // console.log(foundVideos)
         sendResponse('ok')
     } else if (request.cmd == 'resultCheckElementVideoSelected') {
-        console.log('ok:request', request)
+        // console.log('ok:request', request)
         window.postMessage(
             {
                 cmd: "resultCheckElementVideoSelected",
@@ -205,18 +235,18 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         );
         sendResponse('ok')
     } else if (request.cmd == 'addEventsElement') {
-        console.log('addEvents', request)
+
         // console.log('founVi', foundVideos)
         let foundElementVideo = foundVideos.find(d => d.number == request.data.idNumber)
         if (foundElementVideo) {
+            console.log('addEvents', request)
             addEventsElement(foundElementVideo.element)
         }
         sendResponse('ok')
     } else if (request.cmd == 'removeEventsElement') {
-        console.log('Remove Events', request)
         let foundElementVideo = foundVideos.find(d => d.number == request.data.idNumber)
-
         if (foundElementVideo) {
+            console.log('Remove Events', request)
             removeEventsElement(foundElementVideo.element)
         }
         sendResponse('ok')
@@ -228,8 +258,8 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 });
 
 
-chrome.runtime.sendMessage({ data: "Mensaje desde la página" }, (response) => {
-    console.log(response);
-});
+// chrome.runtime.sendMessage({ data: "Mensaje desde la página" }, (response) => {
+//     console.log(response);
+// });
 
 console.log('media-element-selection-extension')
