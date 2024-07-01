@@ -33,7 +33,7 @@ function handlePlay(event) {
     // console.log(event)
     // setTimeout(() => {
     chrome.runtime.sendMessage({
-        cmd: 'element-action',
+        cmd: MESSAGE_TYPES.ELEMENT_ACTION,
         data: {
             action: 'play',
             status: 'sending'
@@ -45,7 +45,7 @@ function handlePause(event) {
     // console.log(event)
     // setTimeout(() => {
     chrome.runtime.sendMessage({
-        cmd: 'element-action',
+        cmd: MESSAGE_TYPES.ELEMENT_ACTION,
         data: {
             action: 'pause',
             status: 'sending'
@@ -59,7 +59,7 @@ function handleSeeking(event) {
     // if (isApply) return isApply = false
     // setTimeout(() => {
     chrome.runtime.sendMessage({
-        cmd: 'element-action',
+        cmd: MESSAGE_TYPES.ELEMENT_ACTION,
         data: {
             action: 'seeked',
             status: 'sending',
@@ -168,105 +168,20 @@ function getVideosPage() {
 
 
 
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(async function (request, sender, sendResponse) {
 
-    // let handle = messageHandlers[request.cmd]
+    let handle = messageHandlers[request.cmd]
 
-    // if (handle) {
-    //     handle(request, sender).then(sendResponse).catch(error => {
-    //         sendResponse({ error })
-    //     })
-
-    //     return true
-    // }
-    // sendResponse({ error: 'no existe tal accion' })
-
-    if (request.cmd == 'element-action') {
-
-        if (request.data.status == 'received') {
-            // console.log('recived ult 567', request)
-            let foundElementVideo = foundVideos.find(d => d.number == request.data.idNumber)
-            if (foundElementVideo) {
-                let mediaElement = foundElementVideo.element
-                if (request.data.action == 'play') {
-                    queue(async () => {
-                        await notGenerateEvent(mediaElement, 'play', handlePlay, () => {
-                            foundElementVideo.element.play()
-                        })
-                    })
-
-                } else if (request.data.action == 'pause') {
-                    queue(async () => {
-                        await notGenerateEvent(mediaElement, 'pause', handlePause, () => {
-                            foundElementVideo.element.pause()
-                        })
-                    })
-                } else if (request.data.action == 'seeked') {
-                    queue(async () => {
-                        await notGenerateEvent(mediaElement, 'seeking', handleSeeking, () => {
-                            if (request.data.dataSeek) {
-                                mediaElement.currentTime = Math.max(0, mediaElement.currentTime + request.data.dataSeek)
-                            } else {
-                                mediaElement.currentTime = Math.max(0, request.data.mediaCurrentTime)
-                            }
-                        })
-                    })
-                }
-
-            }
-        } else if (request.data.status == 'sending') {
-            window.postMessage(
-                {
-                    cmd: request.cmd,
-                    data: request.data
-                },
-                "*",
-            );
+    if (handle) {
+        try {
+            sendResponse(await handle(request, sender))
+        } catch (err) {
+            sendResponse({ err })
         }
 
-        sendResponse('ok')
-
+        return true
     }
-    else if (request.data == 'getVideosData') {
-        // getdataPrueba()
-        let dataImageVideos = getVideosPage()
-        // console.log(dataImageVideos)
-        chrome.runtime.sendMessage({ cmd: 'responseIMGS', data: dataImageVideos }, function (response) {
-            // console.log(response);
-        });
-        // console.log(foundVideos)
-        sendResponse('ok')
-    } else if (request.cmd == 'resultCheckElementVideoSelected') {
-        // console.log('ok:request', request)
-        window.postMessage(
-            {
-                cmd: "resultCheckElementVideoSelected",
-                data: request.data
-            },
-            "*",
-        );
-        sendResponse('ok')
-    } else if (request.cmd == 'addEventsElement') {
-
-        // console.log('founVi', foundVideos)
-        let foundElementVideo = foundVideos.find(d => d.number == request.data.idNumber)
-        if (foundElementVideo) {
-            console.log('addEvents', request)
-            addEventsElement(foundElementVideo.element)
-        }
-        sendResponse('ok')
-    } else if (request.cmd == 'removeEventsElement') {
-        let foundElementVideo = foundVideos.find(d => d.number == request.data.idNumber)
-        if (foundElementVideo) {
-            console.log('Remove Events', request)
-            removeEventsElement(foundElementVideo.element)
-        }
-        sendResponse('ok')
-    } else if (request.cmd == 'checkConnection') {
-        sendResponse('connected')
-    }
-    // sendResponse('ok')
-    return true
+    sendResponse({ error: 'no existe tal accion' })
 });
 
 const messageHandlers = {
@@ -328,7 +243,7 @@ const messageHandlers = {
             status: 'ok'
         }
     },
-    RESULT_CHECK_ELEMENT_VIDEO_SELECTED: () => {
+    RESULT_CHECK_ELEMENT_VIDEO_SELECTED: (request) => {
 
         window.postMessage(
             {
@@ -363,7 +278,7 @@ const messageHandlers = {
         }
     },
     CHECK_CONNECTION: () => {
-        return { messague: 'connected' }
+        return { message: 'connected' }
     }
 
 }
@@ -372,6 +287,7 @@ const messageHandlers = {
 
 const pageMessageHandlers = {
     ELEMENT_ACTION: (cmd, data) => {
+        // console.log('elemt action ', cmd, data)
         if (data.status == 'received') {
             chrome.runtime.sendMessage({ cmd, data });
         }
