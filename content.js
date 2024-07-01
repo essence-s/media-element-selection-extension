@@ -1,3 +1,13 @@
+const MESSAGE_TYPES = {
+    ELEMENT_ACTION: 'ELEMENT_ACTION',
+    GET_VIDEOS_DATA: 'GET_VIDEOS_DATA',
+    CHECK_ELEMENT_VIDEO_SELECTED: "CHECK_ELEMENT_VIDEO_SELECTED",
+    RESULT_CHECK_ELEMENT_VIDEO_SELECTED: 'RESULT_CHECK_ELEMENT_VIDEO_SELECTED',
+    ADD_EVENTS_ELEMENT: 'ADD_EVENTS_ELEMENT',
+    REMOVE_EVENTS_ELEMENTS: 'REMOVE_EVENTS_ELEMENTS',
+    CHECK_CONNECTION: 'CHECK_CONNECTION'
+}
+
 // let isApply = false
 
 function eventQueue() {
@@ -98,22 +108,11 @@ window.addEventListener("message", function (event) {
     if (event.source != window) return;
     let { cmd, data } = event.data
 
-    // const handler = pageMessageHandlers[cmd]
-
-    if (cmd == 'element-action') {
-        if (data.status == 'received') {
-            // console.log('llego desdepagina recived')
-            if (data.action == 'play') {
-                chrome.runtime.sendMessage({ cmd: cmd, data: data });
-            } else if (data.action == 'pause') {
-                chrome.runtime.sendMessage({ cmd: cmd, data: data });
-            } else if (data.action == 'seeked') {
-                chrome.runtime.sendMessage({ cmd: cmd, data: data });
-            }
-        }
-    } else if (cmd == "checkElementVideoSelected") {
-        chrome.runtime.sendMessage({ cmd: 'checkElementVideoSelected', data });
+    const handler = pageMessageHandlers[cmd]
+    if (handler) {
+        handler(cmd, data)
     }
+    // console.log('todo ok')
 
 }, false);
 
@@ -270,17 +269,8 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     return true
 });
 
-const MESSAGE_TYPES = {
-    EXT_ELEMENT_ACTION: 'EXT_ELEMENT_ACTION',
-    EXT_GET_VIDEOS_DATA: 'EXT_GET_VIDEOS_DATA',
-    EXT_RESULT_CHECK_ELEMENT_VIDEO_SELECTED: 'EXT_RESULT_CHECK_ELEMENT_VIDEO_SELECTED',
-    EXT_ADD_EVENTS_ELEMENT: 'EXT_ADD_EVENTS_ELEMENT',
-    EXT_REMOVE_EVENTS_ELEMENTS: 'EXT_REMOVE_EVENTS_ELEMENTS',
-    EXT_CHECK_CONNECTION: 'EXT_CHECK_CONNECTION'
-}
-
 const messageHandlers = {
-    EXT_ELEMENT_ACTION: (request) => {
+    ELEMENT_ACTION: (request) => {
         if (request.data.status == 'received') {
             // console.log('recived ult 567', request)
             let foundElementVideo = foundVideos.find(d => d.number == request.data.idNumber)
@@ -327,7 +317,7 @@ const messageHandlers = {
             status: 'ok'
         }
     },
-    EXT_GET_VIDEOS_DATA: () => {
+    GET_VIDEOS_DATA: () => {
         // getdataPrueba()
         let dataImageVideos = getVideosPage()
         // console.log(dataImageVideos)
@@ -338,18 +328,20 @@ const messageHandlers = {
             status: 'ok'
         }
     },
-    EXT_RESULT_CHECK_ELEMENT_VIDEO_SELECTED: () => {
-        // getdataPrueba()
-        let dataImageVideos = getVideosPage()
-        // console.log(dataImageVideos)
-        chrome.runtime.sendMessage({ cmd: 'responseIMGS', data: dataImageVideos }, function (response) {
-            // console.log(response);
-        });
+    RESULT_CHECK_ELEMENT_VIDEO_SELECTED: () => {
+
+        window.postMessage(
+            {
+                cmd: MESSAGE_TYPES.RESULT_CHECK_ELEMENT_VIDEO_SELECTED,
+                data: request.data
+            },
+            "*",
+        );
         return {
             status: 'ok'
         }
     },
-    EXT_ADD_EVENTS_ELEMENT: (request) => {
+    ADD_EVENTS_ELEMENT: (request) => {
         // console.log('founVi', foundVideos)
         let foundElementVideo = foundVideos.find(d => d.number == request.data.idNumber)
         if (foundElementVideo) {
@@ -360,7 +352,7 @@ const messageHandlers = {
             status: 'ok'
         }
     },
-    EXT_REMOVE_EVENTS_ELEMENTS: (request) => {
+    REMOVE_EVENTS_ELEMENTS: (request) => {
         let foundElementVideo = foundVideos.find(d => d.number == request.data.idNumber)
         if (foundElementVideo) {
             console.log('Remove Events', request)
@@ -370,28 +362,22 @@ const messageHandlers = {
             status: 'ok'
         }
     },
-    EXT_CHECK_CONNECTION: () => {
+    CHECK_CONNECTION: () => {
         return { messague: 'connected' }
     }
 
 }
 
+
+
 const pageMessageHandlers = {
-    PAGE_ELEMENT_ACTION: (cmd, data) => {
+    ELEMENT_ACTION: (cmd, data) => {
         if (data.status == 'received') {
             chrome.runtime.sendMessage({ cmd, data });
-            // console.log('llego desdepagina recived')
-            // if (data.action == 'play') {
-            //     chrome.runtime.sendMessage({ cmd: cmd, data: data });
-            // } else if (data.action == 'pause') {
-            //     chrome.runtime.sendMessage({ cmd: cmd, data: data });
-            // } else if (data.action == 'seeked') {
-            //     chrome.runtime.sendMessage({ cmd: cmd, data: data });
-            // }
         }
     },
-    PAGE_CHECK_ELEMENT_VIDEO_SELECTED: (data) => {
-        chrome.runtime.sendMessage({ cmd: 'checkElementVideoSelected', data });
+    CHECK_ELEMENT_VIDEO_SELECTED: (cmd, data) => {
+        chrome.runtime.sendMessage({ cmd, data });
     }
 }
 
