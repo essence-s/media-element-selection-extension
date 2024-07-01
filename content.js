@@ -98,6 +98,8 @@ window.addEventListener("message", function (event) {
     if (event.source != window) return;
     let { cmd, data } = event.data
 
+    // const handler = pageMessageHandlers[cmd]
+
     if (cmd == 'element-action') {
         if (data.status == 'received') {
             // console.log('llego desdepagina recived')
@@ -168,6 +170,17 @@ function getVideosPage() {
 
 
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+
+    // let handle = messageHandlers[request.cmd]
+
+    // if (handle) {
+    //     handle(request, sender).then(sendResponse).catch(error => {
+    //         sendResponse({ error })
+    //     })
+
+    //     return true
+    // }
+    // sendResponse({ error: 'no existe tal accion' })
 
     if (request.cmd == 'element-action') {
 
@@ -256,6 +269,131 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     // sendResponse('ok')
     return true
 });
+
+const MESSAGE_TYPES = {
+    EXT_ELEMENT_ACTION: 'EXT_ELEMENT_ACTION',
+    EXT_GET_VIDEOS_DATA: 'EXT_GET_VIDEOS_DATA',
+    EXT_RESULT_CHECK_ELEMENT_VIDEO_SELECTED: 'EXT_RESULT_CHECK_ELEMENT_VIDEO_SELECTED',
+    EXT_ADD_EVENTS_ELEMENT: 'EXT_ADD_EVENTS_ELEMENT',
+    EXT_REMOVE_EVENTS_ELEMENTS: 'EXT_REMOVE_EVENTS_ELEMENTS',
+    EXT_CHECK_CONNECTION: 'EXT_CHECK_CONNECTION'
+}
+
+const messageHandlers = {
+    EXT_ELEMENT_ACTION: (request) => {
+        if (request.data.status == 'received') {
+            // console.log('recived ult 567', request)
+            let foundElementVideo = foundVideos.find(d => d.number == request.data.idNumber)
+            if (foundElementVideo) {
+                let mediaElement = foundElementVideo.element
+                if (request.data.action == 'play') {
+                    queue(async () => {
+                        await notGenerateEvent(mediaElement, 'play', handlePlay, () => {
+                            foundElementVideo.element.play()
+                        })
+                    })
+
+                } else if (request.data.action == 'pause') {
+                    queue(async () => {
+                        await notGenerateEvent(mediaElement, 'pause', handlePause, () => {
+                            foundElementVideo.element.pause()
+                        })
+                    })
+                } else if (request.data.action == 'seeked') {
+                    queue(async () => {
+                        await notGenerateEvent(mediaElement, 'seeking', handleSeeking, () => {
+                            if (request.data.dataSeek) {
+                                mediaElement.currentTime = Math.max(0, mediaElement.currentTime + request.data.dataSeek)
+                            } else {
+                                mediaElement.currentTime = Math.max(0, request.data.mediaCurrentTime)
+                            }
+                        })
+                    })
+                }
+
+            }
+        } else if (request.data.status == 'sending') {
+            window.postMessage(
+                {
+                    cmd: request.cmd,
+                    data: request.data
+                },
+                "*",
+            );
+        }
+
+        // sendResponse('ok')
+        return {
+            status: 'ok'
+        }
+    },
+    EXT_GET_VIDEOS_DATA: () => {
+        // getdataPrueba()
+        let dataImageVideos = getVideosPage()
+        // console.log(dataImageVideos)
+        chrome.runtime.sendMessage({ cmd: 'responseIMGS', data: dataImageVideos }, function (response) {
+            // console.log(response);
+        });
+        return {
+            status: 'ok'
+        }
+    },
+    EXT_RESULT_CHECK_ELEMENT_VIDEO_SELECTED: () => {
+        // getdataPrueba()
+        let dataImageVideos = getVideosPage()
+        // console.log(dataImageVideos)
+        chrome.runtime.sendMessage({ cmd: 'responseIMGS', data: dataImageVideos }, function (response) {
+            // console.log(response);
+        });
+        return {
+            status: 'ok'
+        }
+    },
+    EXT_ADD_EVENTS_ELEMENT: (request) => {
+        // console.log('founVi', foundVideos)
+        let foundElementVideo = foundVideos.find(d => d.number == request.data.idNumber)
+        if (foundElementVideo) {
+            console.log('addEvents', request)
+            addEventsElement(foundElementVideo.element)
+        }
+        return {
+            status: 'ok'
+        }
+    },
+    EXT_REMOVE_EVENTS_ELEMENTS: (request) => {
+        let foundElementVideo = foundVideos.find(d => d.number == request.data.idNumber)
+        if (foundElementVideo) {
+            console.log('Remove Events', request)
+            removeEventsElement(foundElementVideo.element)
+        }
+        return {
+            status: 'ok'
+        }
+    },
+    EXT_CHECK_CONNECTION: () => {
+        return { messague: 'connected' }
+    }
+
+}
+
+const pageMessageHandlers = {
+    PAGE_ELEMENT_ACTION: (cmd, data) => {
+        if (data.status == 'received') {
+            chrome.runtime.sendMessage({ cmd, data });
+            // console.log('llego desdepagina recived')
+            // if (data.action == 'play') {
+            //     chrome.runtime.sendMessage({ cmd: cmd, data: data });
+            // } else if (data.action == 'pause') {
+            //     chrome.runtime.sendMessage({ cmd: cmd, data: data });
+            // } else if (data.action == 'seeked') {
+            //     chrome.runtime.sendMessage({ cmd: cmd, data: data });
+            // }
+        }
+    },
+    PAGE_CHECK_ELEMENT_VIDEO_SELECTED: (data) => {
+        chrome.runtime.sendMessage({ cmd: 'checkElementVideoSelected', data });
+    }
+}
 
 
 // chrome.runtime.sendMessage({ data: "Mensaje desde la página" }, (response) => {
