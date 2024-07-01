@@ -1,3 +1,13 @@
+const MESSAGE_TYPES = {
+    ELEMENT_ACTION: 'ELEMENT_ACTION',
+    GET_VIDEOS_DATA: 'GET_VIDEOS_DATA',
+    CHECK_ELEMENT_VIDEO_SELECTED: "CHECK_ELEMENT_VIDEO_SELECTED",
+    RESULT_CHECK_ELEMENT_VIDEO_SELECTED: 'RESULT_CHECK_ELEMENT_VIDEO_SELECTED',
+    ADD_EVENTS_ELEMENT: 'ADD_EVENTS_ELEMENT',
+    REMOVE_EVENTS_ELEMENTS: 'REMOVE_EVENTS_ELEMENTS',
+    CHECK_CONNECTION: 'CHECK_CONNECTION'
+}
+
 let dataG = {
     tabId: '',
     imgNumber: '',
@@ -8,11 +18,11 @@ let dataG = {
 let dataLS = localStorage.getItem('dataG')
 if (dataLS) {
     dataG = JSON.parse(dataLS)
-    chrome.tabs.sendMessage(parseInt(dataG.tabId), { cmd: 'checkConnection' }, (response) => {
+    chrome.tabs.sendMessage(parseInt(dataG.tabId), { cmd: MESSAGE_TYPES.CHECK_CONNECTION }, (response) => {
         if (chrome.runtime.lastError) {
             console.log('Error al enviar mensaje:', chrome.runtime.lastError.message);
             renderSelectedVideoElement(dataSaveVideo, 'no-connect')
-        } else if (response == 'connected') {
+        } else if (response.message == 'connected') {
             renderSelectedVideoElement(dataSaveVideo)
         }
     })
@@ -61,7 +71,7 @@ dataTabs.addEventListener('click', (e) => {
         let tabId = e.target.getAttribute('dataID')
         // console.log('dddp')
         window.location.href = '#dataVideos'
-        chrome.tabs.sendMessage(parseInt(tabId), { data: 'getVideosData' }, (response) => {
+        chrome.tabs.sendMessage(parseInt(tabId), { cmd: MESSAGE_TYPES.GET_VIDEOS_DATA }, (response) => {
             if (chrome.runtime.lastError) {
                 // console.log(chrome.runtime.lastError)
                 console.log('Error al enviar mensaje:', chrome.runtime.lastError.message);
@@ -73,7 +83,7 @@ dataTabs.addEventListener('click', (e) => {
                     files: ["content.js"],
                 }).then(() => {
                     console.log("script injected in all jaus")
-                    chrome.tabs.sendMessage(parseInt(tabId), { data: 'getVideosData' }, (response) => {
+                    chrome.tabs.sendMessage(parseInt(tabId), { cmd: MESSAGE_TYPES.GET_VIDEOS_DATA }, (response) => {
                         if (chrome.runtime.lastError) {
                             console.log('Error al enviar mensaje 2:', chrome.runtime.lastError.message);
                         } else {
@@ -112,7 +122,7 @@ function resultCheckElementVideoSelected() {
     chrome.tabs.query({ url: ['https://ahiseve.vercel.app/*', 'http://localhost:4321/*'] }, (tabs) => {
         tabs.forEach(tab => {
             chrome.tabs.sendMessage(tab.id, {
-                cmd: 'resultCheckElementVideoSelected',
+                cmd: MESSAGE_TYPES.RESULT_CHECK_ELEMENT_VIDEO_SELECTED,
                 data: sendData
             });
         })
@@ -126,10 +136,12 @@ dataVideos.addEventListener('click', (e) => {
             dataG.imgNumber = e.target.getAttribute('imgNumber')
             dataG.imgCover = e.target.src
             dataG.tabId = e.target.getAttribute('tabId')
+
+
             chrome.tabs.get(parseInt(e.target.getAttribute('tabId')), function (tab) {
                 // console.log(tab.favIconUrl)
                 dataG.favIconUrl = tab.favIconUrl
-                // console.log(e.target)
+                // console.log('dino', e.target)
 
                 localStorage.setItem('dataG', JSON.stringify(dataG))
                 chrome.runtime.sendMessage({ cmd: 'updateDataG', data: dataG });
@@ -137,7 +149,7 @@ dataVideos.addEventListener('click', (e) => {
 
                 // mandar señal para agregar eventos al element
                 chrome.tabs.sendMessage(parseInt(dataG.tabId), {
-                    cmd: 'addEventsElement',
+                    cmd: MESSAGE_TYPES.ADD_EVENTS_ELEMENT,
                     data: { idNumber: dataG.imgNumber }
                 })
 
@@ -149,14 +161,14 @@ dataVideos.addEventListener('click', (e) => {
             funExec()
         } else {
             chrome.tabs.sendMessage(parseInt(dataG.tabId), {
-                cmd: 'removeEventsElement',
+                cmd: MESSAGE_TYPES.REMOVE_EVENTS_ELEMENTS,
                 data: { idNumber: dataG.imgNumber }
             }, (response) => {
                 if (chrome.runtime.lastError) {
                     console.log('error remove', chrome.runtime.lastError.message)
                     funExec()
                 } else {
-                    if (response == 'ok') {
+                    if (response.status == 'ok') {
                         funExec()
                     }
                 }
