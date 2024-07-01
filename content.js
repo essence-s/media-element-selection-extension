@@ -1,11 +1,13 @@
-const MESSAGE_TYPES = {
-    ELEMENT_ACTION: 'ELEMENT_ACTION',
-    GET_VIDEOS_DATA: 'GET_VIDEOS_DATA',
-    CHECK_ELEMENT_VIDEO_SELECTED: "CHECK_ELEMENT_VIDEO_SELECTED",
-    RESULT_CHECK_ELEMENT_VIDEO_SELECTED: 'RESULT_CHECK_ELEMENT_VIDEO_SELECTED',
-    ADD_EVENTS_ELEMENT: 'ADD_EVENTS_ELEMENT',
-    REMOVE_EVENTS_ELEMENTS: 'REMOVE_EVENTS_ELEMENTS',
-    CHECK_CONNECTION: 'CHECK_CONNECTION'
+function sendMessage(message) {
+    return new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(message, (response) => {
+            if (chrome.runtime.lastError) {
+                reject(chrome.runtime.lastError)
+            } else {
+                resolve(response)
+            }
+        })
+    })
 }
 
 // let isApply = false
@@ -32,7 +34,7 @@ let queue = eventQueue()
 function handlePlay(event) {
     // console.log(event)
     // setTimeout(() => {
-    chrome.runtime.sendMessage({
+    sendMessage({
         cmd: MESSAGE_TYPES.ELEMENT_ACTION,
         data: {
             action: 'play',
@@ -44,7 +46,7 @@ function handlePlay(event) {
 function handlePause(event) {
     // console.log(event)
     // setTimeout(() => {
-    chrome.runtime.sendMessage({
+    sendMessage({
         cmd: MESSAGE_TYPES.ELEMENT_ACTION,
         data: {
             action: 'pause',
@@ -58,7 +60,7 @@ function handleSeeking(event) {
     // console.log(event)
     // if (isApply) return isApply = false
     // setTimeout(() => {
-    chrome.runtime.sendMessage({
+    sendMessage({
         cmd: MESSAGE_TYPES.ELEMENT_ACTION,
         data: {
             action: 'seeked',
@@ -236,9 +238,7 @@ const messageHandlers = {
         // getdataPrueba()
         let dataImageVideos = getVideosPage()
         // console.log(dataImageVideos)
-        chrome.runtime.sendMessage({ cmd: 'responseIMGS', data: dataImageVideos }, function (response) {
-            // console.log(response);
-        });
+        sendMessage({ cmd: 'responseIMGS', data: dataImageVideos })
         return {
             status: 'ok'
         }
@@ -289,11 +289,11 @@ const pageMessageHandlers = {
     ELEMENT_ACTION: (cmd, data) => {
         // console.log('elemt action ', cmd, data)
         if (data.status == 'received') {
-            chrome.runtime.sendMessage({ cmd, data });
+            sendMessage({ cmd, data });
         }
     },
     CHECK_ELEMENT_VIDEO_SELECTED: (cmd, data) => {
-        chrome.runtime.sendMessage({ cmd, data });
+        sendMessage({ cmd, data });
     }
 }
 
