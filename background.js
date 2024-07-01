@@ -14,6 +14,18 @@ chrome.tabs.query({ url: ['https://ahiseve.vercel.app/*', 'http://localhost:4321
 
 let dataG = {}
 
+function sendMessageTab(tabId, message) {
+    return new Promise((resolve, reject) => {
+        chrome.tabs.sendMessage(parseInt(tabId), message, (response) => {
+            if (chrome.runtime.lastError) {
+                reject(chrome.runtime.lastError)
+            } else {
+                resolve(response)
+            }
+        })
+    })
+}
+
 function comprobarData() {
     return new Promise((resolve) => {
         if (Object.keys(dataG).length == 0) {
@@ -63,7 +75,7 @@ chrome.runtime.onMessage.addListener(
                     // enviar al pagina principal
                     chrome.tabs.query({ url: ['https://ahiseve.vercel.app/*', 'http://localhost:4321/*'] }, (tabs) => {
                         tabs.forEach(tab => {
-                            chrome.tabs.sendMessage(tab.id, {
+                            sendMessageTab(tab.id, {
                                 cmd: request.cmd,
                                 data: request.data
                             });
@@ -72,7 +84,7 @@ chrome.runtime.onMessage.addListener(
                 } else {
                     // console.log(dataG)
                     // enviar a la pagina y videoElement Selecionado
-                    chrome.tabs.sendMessage(parseInt(dataG.tabId), {
+                    sendMessageTab(parseInt(dataG.tabId), {
                         cmd: request.cmd,
                         data: {
                             ...request.data,
@@ -95,7 +107,7 @@ chrome.runtime.onMessage.addListener(
                     // console.log('dataG', dataG)
                 }
                 // console.log('dataG vacio', dataG)
-                chrome.tabs.sendMessage(sender.tab.id, {
+                sendMessageTab(sender.tab.id, {
                     cmd: MESSAGE_TYPES.RESULT_CHECK_ELEMENT_VIDEO_SELECTED,
                     data: sendData
                 });
