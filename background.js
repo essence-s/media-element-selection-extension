@@ -32,6 +32,15 @@ function comprobarData() {
 
 }
 
+const MESSAGE_TYPES = {
+    ELEMENT_ACTION: 'ELEMENT_ACTION',
+    GET_VIDEOS_DATA: 'GET_VIDEOS_DATA',
+    CHECK_ELEMENT_VIDEO_SELECTED: "CHECK_ELEMENT_VIDEO_SELECTED",
+    RESULT_CHECK_ELEMENT_VIDEO_SELECTED: 'RESULT_CHECK_ELEMENT_VIDEO_SELECTED',
+    ADD_EVENTS_ELEMENT: 'ADD_EVENTS_ELEMENT',
+    REMOVE_EVENTS_ELEMENTS: 'REMOVE_EVENTS_ELEMENTS',
+    CHECK_CONNECTION: 'CHECK_CONNECTION'
+}
 
 
 chrome.runtime.onMessage.addListener(
@@ -48,7 +57,7 @@ chrome.runtime.onMessage.addListener(
                 });
 
             }
-            else if (request.cmd == 'element-action') {
+            else if (request.cmd == MESSAGE_TYPES.ELEMENT_ACTION) {
                 // console.log('element-action', request)
                 if (request.data.status == 'sending') {
                     // enviar al pagina principal
@@ -73,8 +82,8 @@ chrome.runtime.onMessage.addListener(
 
                 }
 
-            } else if (request.cmd == 'checkElementVideoSelected') {
-
+            } else if (request.cmd == MESSAGE_TYPES.CHECK_ELEMENT_VIDEO_SELECTED) {
+                console.log('check', request)
                 let sendData = {
                     selected: false
                 }
@@ -87,7 +96,7 @@ chrome.runtime.onMessage.addListener(
                 }
                 // console.log('dataG vacio', dataG)
                 chrome.tabs.sendMessage(sender.tab.id, {
-                    cmd: 'resultCheckElementVideoSelected',
+                    cmd: MESSAGE_TYPES.RESULT_CHECK_ELEMENT_VIDEO_SELECTED,
                     data: sendData
                 });
             }
