@@ -105,21 +105,6 @@ function notGenerateEvent(targetElement, eventElement, functionElement, callback
     })
 }
 
-
-window.addEventListener("message", function (event) {
-    if (event.source != window) return;
-    let { cmd, data } = event.data
-
-    const handler = pageMessageHandlers[cmd]
-    if (handler) {
-        handler(cmd, data)
-    }
-    // console.log('todo ok')
-
-}, false);
-
-
-
 function generarID() {
     const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     const longitudID = 8;
@@ -168,23 +153,15 @@ function getVideosPage() {
     return arrayvideos.map(v => ({ number: v.number, img: v.img }))
 }
 
-
-
-chrome.runtime.onMessage.addListener(async function (request, sender, sendResponse) {
-
-    let handle = messageHandlers[request.cmd]
-
-    if (handle) {
-        try {
-            sendResponse(await handle(request, sender))
-        } catch (err) {
-            sendResponse({ err })
-        }
-
-        return true
-    }
-    sendResponse({ error: 'no existe tal accion' })
-});
+const MESSAGE_TYPES = {
+    ELEMENT_ACTION: 'ELEMENT_ACTION',
+    GET_VIDEOS_DATA: 'GET_VIDEOS_DATA',
+    CHECK_ELEMENT_VIDEO_SELECTED: "CHECK_ELEMENT_VIDEO_SELECTED",
+    RESULT_CHECK_ELEMENT_VIDEO_SELECTED: 'RESULT_CHECK_ELEMENT_VIDEO_SELECTED',
+    ADD_EVENTS_ELEMENT: 'ADD_EVENTS_ELEMENT',
+    REMOVE_EVENTS_ELEMENTS: 'REMOVE_EVENTS_ELEMENTS',
+    CHECK_CONNECTION: 'CHECK_CONNECTION'
+}
 
 const messageHandlers = {
     ELEMENT_ACTION: (request) => {
@@ -244,7 +221,6 @@ const messageHandlers = {
         }
     },
     RESULT_CHECK_ELEMENT_VIDEO_SELECTED: (request) => {
-
         window.postMessage(
             {
                 cmd: MESSAGE_TYPES.RESULT_CHECK_ELEMENT_VIDEO_SELECTED,
@@ -297,6 +273,33 @@ const pageMessageHandlers = {
     }
 }
 
+window.addEventListener("message", function (event) {
+    if (event.source != window) return;
+    let { cmd, data } = event.data
+
+    const handler = pageMessageHandlers[cmd]
+    if (handler) {
+        handler(cmd, data)
+    }
+    // console.log('todo ok')
+
+}, false);
+
+chrome.runtime.onMessage.addListener(async function (request, sender, sendResponse) {
+
+    let handle = messageHandlers[request.cmd]
+
+    if (handle) {
+        try {
+            sendResponse(await handle(request, sender))
+        } catch (err) {
+            sendResponse({ err })
+        }
+
+        return true
+    }
+    sendResponse({ error: 'no existe tal accion' })
+});
 
 // chrome.runtime.sendMessage({ data: "Mensaje desde la página" }, (response) => {
 //     console.log(response);
