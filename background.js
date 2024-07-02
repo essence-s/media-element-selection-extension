@@ -1,14 +1,22 @@
 chrome.runtime.onInstalled.addListener(() => {
     console.log('installed')
 })
+// improve
 chrome.tabs.query({ url: ['https://ahiseve.vercel.app/*', 'http://localhost:4321/*'] }, (tabs) => {
     tabs.forEach(tab => {
-        chrome.scripting.executeScript({
-            target: { tabId: parseInt(tab.id) },
-            files: ["content.js"],
-        }).then(() => {
-            console.log("script injected")
-        });
+        sendMessageTab(tab.id, { cmd: MESSAGE_TYPES.CHECK_CONNECTION }).then(response => {
+            if (response.message == 'connected') {
+                console.log(response, 'ya esta conectado')
+            }
+        }).catch(err => {
+            chrome.scripting.executeScript({
+                target: { tabId: parseInt(tab.id) },
+                files: ["content.js"],
+            }).then(() => {
+                console.log("script injected")
+            });
+        })
+
     })
 })
 
@@ -95,7 +103,7 @@ chrome.runtime.onMessage.addListener(
                 }
 
             } else if (request.cmd == MESSAGE_TYPES.CHECK_ELEMENT_VIDEO_SELECTED) {
-                console.log('check', request)
+                // console.log('check', request)
                 let sendData = {
                     selected: false
                 }
