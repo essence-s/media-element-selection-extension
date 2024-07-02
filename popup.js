@@ -1,3 +1,71 @@
+function sendMessage(message) {
+    return new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(message, (response) => {
+            if (chrome.runtime.lastError) {
+                reject(chrome.runtime.lastError)
+            } else {
+                resolve(response)
+            }
+        })
+    })
+}
+
+function sendMessageTab(tabId, message) {
+    return new Promise((resolve, reject) => {
+        chrome.tabs.sendMessage(parseInt(tabId), message, (response) => {
+            if (chrome.runtime.lastError) {
+                reject(chrome.runtime.lastError)
+            } else {
+                resolve(response)
+            }
+        })
+    })
+}
+
+function renderSelectedVideoElement(element, nc) {
+    if (nc == 'no-connect') {
+        element.classList.add('no-conect')
+    } else {
+        element.classList.remove('no-conect')
+    }
+    // Video Seleccionado
+    // ID Page: ${dataG.tabId}
+    element.innerHTML = `
+        <p>
+            Video Seleccionado
+            <img src='${dataG.favIconUrl}' crossorigin="anonymous" class="data-save-img-icon" />
+        </p>
+        <img src=${dataG.imgCover} class='img-option'> 
+    `
+}
+
+function renderResponseImgs(request) {
+    dataVideos.innerHTML = request.map(element => {
+        return `<img class='img-option' tabId='${element.tabId}' imgNumber="${element.number}" src="${element.img}" > `
+    }).join('')
+}
+
+function resultCheckElementVideoSelected() {
+    let sendData = {
+        selected: false
+    }
+
+    if (Object.keys(dataG).length != 0) {
+        sendData = {
+            selected: true,
+        }
+    }
+
+    chrome.tabs.query({ url: ['https://ahiseve.vercel.app/*', 'http://localhost:4321/*'] }, (tabs) => {
+        tabs.forEach(tab => {
+            sendMessageTab(tab.id, {
+                cmd: MESSAGE_TYPES.RESULT_CHECK_ELEMENT_VIDEO_SELECTED,
+                data: sendData
+            });
+        })
+    })
+}
+
 const MESSAGE_TYPES = {
     ELEMENT_ACTION: 'ELEMENT_ACTION',
     GET_VIDEOS_DATA: 'GET_VIDEOS_DATA',
@@ -18,33 +86,17 @@ let dataG = {
 let dataLS = localStorage.getItem('dataG')
 if (dataLS) {
     dataG = JSON.parse(dataLS)
-    chrome.tabs.sendMessage(parseInt(dataG.tabId), { cmd: MESSAGE_TYPES.CHECK_CONNECTION }, (response) => {
-        if (chrome.runtime.lastError) {
-            console.log('Error al enviar mensaje:', chrome.runtime.lastError.message);
+
+    sendMessageTab(parseInt(dataG.tabId), { cmd: MESSAGE_TYPES.CHECK_CONNECTION })
+        .then((response) => {
+            if (response.message == 'connected') {
+                renderSelectedVideoElement(dataSaveVideo)
+            }
+        }).catch(err => {
+            console.log('Error al enviar mensaje:', err);
             renderSelectedVideoElement(dataSaveVideo, 'no-connect')
-        } else if (response.message == 'connected') {
-            renderSelectedVideoElement(dataSaveVideo)
-        }
-    })
+        })
 
-
-}
-
-function renderSelectedVideoElement(element, nc) {
-    if (nc == 'no-connect') {
-        element.classList.add('no-conect')
-    } else {
-        element.classList.remove('no-conect')
-    }
-    // Video Seleccionado
-    // ID Page: ${dataG.tabId}
-    element.innerHTML = `
-        <p>
-            Video Seleccionado
-            <img src='${dataG.favIconUrl}' crossorigin="anonymous" class="data-save-img-icon" />
-        </p>
-        <img src=${dataG.imgCover} class='img-option'> 
-    `
 
 }
 
@@ -71,10 +123,13 @@ dataTabs.addEventListener('click', (e) => {
         let tabId = e.target.getAttribute('dataID')
         // console.log('dddp')
         window.location.href = '#dataVideos'
-        chrome.tabs.sendMessage(parseInt(tabId), { cmd: MESSAGE_TYPES.GET_VIDEOS_DATA }, (response) => {
-            if (chrome.runtime.lastError) {
-                // console.log(chrome.runtime.lastError)
-                console.log('Error al enviar mensaje:', chrome.runtime.lastError.message);
+
+
+        sendMessageTab(parseInt(tabId), { cmd: MESSAGE_TYPES.GET_VIDEOS_DATA })
+            .then((response) => {
+                console.log('Mensaje enviado:', response)
+            }).catch((error) => {
+                console.log('Error al enviar mensaje:', error)
                 chrome.scripting.executeScript({
                     target: {
                         tabId: parseInt(tabId),
@@ -83,51 +138,17 @@ dataTabs.addEventListener('click', (e) => {
                     files: ["content.js"],
                 }).then(() => {
                     console.log("script injected in all jaus")
-                    chrome.tabs.sendMessage(parseInt(tabId), { cmd: MESSAGE_TYPES.GET_VIDEOS_DATA }, (response) => {
-                        if (chrome.runtime.lastError) {
-                            console.log('Error al enviar mensaje 2:', chrome.runtime.lastError.message);
-                        } else {
-                            console.log('Mensaje enviado:', response);
-                        }
-                    })
 
+                    sendMessageTab(parseInt(tabId), { cmd: MESSAGE_TYPES.GET_VIDEOS_DATA })
+                        .then((response) => {
+                            console.log('Mensaje enviado:', response)
+                        }).catch((err) => {
+                            console.log('Error al enviar mensaje 2:', err)
+                        })
                 });
-
-
-            } else {
-                console.log('Mensaje enviado:', response);
-            }
-        });
+            })
     }
 })
-
-
-function renderResponseImgs(request) {
-    dataVideos.innerHTML = request.map(element => {
-        return `<img class='img-option' tabId='${element.tabId}' imgNumber="${element.number}" src="${element.img}" > `
-    }).join('')
-}
-
-function resultCheckElementVideoSelected() {
-    let sendData = {
-        selected: false
-    }
-
-    if (Object.keys(dataG).length != 0) {
-        sendData = {
-            selected: true,
-        }
-    }
-
-    chrome.tabs.query({ url: ['https://ahiseve.vercel.app/*', 'http://localhost:4321/*'] }, (tabs) => {
-        tabs.forEach(tab => {
-            chrome.tabs.sendMessage(tab.id, {
-                cmd: MESSAGE_TYPES.RESULT_CHECK_ELEMENT_VIDEO_SELECTED,
-                data: sendData
-            });
-        })
-    })
-}
 
 dataVideos.addEventListener('click', (e) => {
     if (e.target.classList.contains('img-option')) {
@@ -144,11 +165,11 @@ dataVideos.addEventListener('click', (e) => {
                 // console.log('dino', e.target)
 
                 localStorage.setItem('dataG', JSON.stringify(dataG))
-                chrome.runtime.sendMessage({ cmd: 'updateDataG', data: dataG });
+                sendMessage({ cmd: 'updateDataG', data: dataG });
                 renderSelectedVideoElement(dataSaveVideo)
 
                 // mandar señal para agregar eventos al element
-                chrome.tabs.sendMessage(parseInt(dataG.tabId), {
+                sendMessageTab(parseInt(dataG.tabId), {
                     cmd: MESSAGE_TYPES.ADD_EVENTS_ELEMENT,
                     data: { idNumber: dataG.imgNumber }
                 })
@@ -160,18 +181,16 @@ dataVideos.addEventListener('click', (e) => {
         if (dataG.tabId == '') {
             funExec()
         } else {
-            chrome.tabs.sendMessage(parseInt(dataG.tabId), {
+            sendMessageTab(parseInt(dataG.tabId), {
                 cmd: MESSAGE_TYPES.REMOVE_EVENTS_ELEMENTS,
                 data: { idNumber: dataG.imgNumber }
-            }, (response) => {
-                if (chrome.runtime.lastError) {
-                    console.log('error remove', chrome.runtime.lastError.message)
+            }).then((response) => {
+                if (response.status == 'ok') {
                     funExec()
-                } else {
-                    if (response.status == 'ok') {
-                        funExec()
-                    }
                 }
+            }).catch(error => {
+                console.log('error remove', error)
+                funExec()
             })
         }
 
