@@ -40,6 +40,8 @@ function handlePlay(event) {
             action: 'play',
             status: 'sending'
         }
+    }).catch(e => {
+        console.log(e)
     })
     // }, 1000)
 }
@@ -52,7 +54,9 @@ function handlePause(event) {
             action: 'pause',
             status: 'sending'
         }
-    });
+    }).catch(e => {
+        console.log(e)
+    })
     // }, 1000)
 }
 
@@ -67,7 +71,9 @@ function handleSeeking(event) {
             status: 'sending',
             mediaCurrentTime: event.target.currentTime
         }
-    });
+    }).catch(e => {
+        console.log(e)
+    })
     // }, 3000)
 
 }
