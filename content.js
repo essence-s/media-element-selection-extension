@@ -2,7 +2,7 @@ function sendMessage(message) {
     return new Promise((resolve, reject) => {
         chrome.runtime.sendMessage(message, (response) => {
             if (chrome.runtime.lastError) {
-                reject(chrome.runtime.lastError)
+                reject(chrome.runtime.lastError.message)
             } else {
                 resolve(response)
             }
@@ -271,7 +271,7 @@ const pageMessageHandlers = {
     ELEMENT_ACTION: (cmd, data) => {
         // console.log('elemt action ', cmd, data)
         if (data.status == 'received') {
-            sendMessage({ cmd, data });
+            sendMessage({ cmd, data }).catch(e=>{console.log(e)});
         }
     },
     CHECK_ELEMENT_VIDEO_SELECTED: (cmd, data) => {
