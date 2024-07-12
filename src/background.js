@@ -1,3 +1,6 @@
+import { MESSAGE_TYPES } from "./types"
+import { sendMessageTab } from "./util"
+
 chrome.runtime.onInstalled.addListener(() => {
     console.log('installed')
 })
@@ -11,7 +14,7 @@ chrome.tabs.query({ url: ['https://ahiseve.vercel.app/*', 'http://localhost:4321
         }).catch(err => {
             chrome.scripting.executeScript({
                 target: { tabId: parseInt(tab.id) },
-                files: ["content.js"],
+                files: ["content.bundle.js"],
             }).then(() => {
                 console.log("script injected")
             });
@@ -21,18 +24,6 @@ chrome.tabs.query({ url: ['https://ahiseve.vercel.app/*', 'http://localhost:4321
 })
 
 let dataG = {}
-
-function sendMessageTab(tabId, message) {
-    return new Promise((resolve, reject) => {
-        chrome.tabs.sendMessage(parseInt(tabId), message, (response) => {
-            if (chrome.runtime.lastError) {
-                reject(chrome.runtime.lastError.message)
-            } else {
-                resolve(response)
-            }
-        })
-    })
-}
 
 function comprobarData() {
     return new Promise((resolve) => {
@@ -51,17 +42,6 @@ function comprobarData() {
     })
 
 }
-
-const MESSAGE_TYPES = {
-    ELEMENT_ACTION: 'ELEMENT_ACTION',
-    GET_VIDEOS_DATA: 'GET_VIDEOS_DATA',
-    CHECK_ELEMENT_VIDEO_SELECTED: "CHECK_ELEMENT_VIDEO_SELECTED",
-    RESULT_CHECK_ELEMENT_VIDEO_SELECTED: 'RESULT_CHECK_ELEMENT_VIDEO_SELECTED',
-    ADD_EVENTS_ELEMENT: 'ADD_EVENTS_ELEMENT',
-    REMOVE_EVENTS_ELEMENTS: 'REMOVE_EVENTS_ELEMENTS',
-    CHECK_CONNECTION: 'CHECK_CONNECTION'
-}
-
 
 chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {

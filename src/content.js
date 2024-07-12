@@ -1,14 +1,5 @@
-function sendMessage(message) {
-    return new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage(message, (response) => {
-            if (chrome.runtime.lastError) {
-                reject(chrome.runtime.lastError.message)
-            } else {
-                resolve(response)
-            }
-        })
-    })
-}
+import { MESSAGE_TYPES } from "./types"
+import { sendMessage } from "./util"
 
 // let isApply = false
 
@@ -159,16 +150,6 @@ function getVideosPage() {
     return arrayvideos.map(v => ({ number: v.number, img: v.img }))
 }
 
-const MESSAGE_TYPES = {
-    ELEMENT_ACTION: 'ELEMENT_ACTION',
-    GET_VIDEOS_DATA: 'GET_VIDEOS_DATA',
-    CHECK_ELEMENT_VIDEO_SELECTED: "CHECK_ELEMENT_VIDEO_SELECTED",
-    RESULT_CHECK_ELEMENT_VIDEO_SELECTED: 'RESULT_CHECK_ELEMENT_VIDEO_SELECTED',
-    ADD_EVENTS_ELEMENT: 'ADD_EVENTS_ELEMENT',
-    REMOVE_EVENTS_ELEMENTS: 'REMOVE_EVENTS_ELEMENTS',
-    CHECK_CONNECTION: 'CHECK_CONNECTION'
-}
-
 const messageHandlers = {
     ELEMENT_ACTION: (request) => {
         if (request.data.status == 'received') {
@@ -271,7 +252,7 @@ const pageMessageHandlers = {
     ELEMENT_ACTION: (cmd, data) => {
         // console.log('elemt action ', cmd, data)
         if (data.status == 'received') {
-            sendMessage({ cmd, data }).catch(e=>{console.log(e)});
+            sendMessage({ cmd, data }).catch(e => { console.log(e) });
         }
     },
     CHECK_ELEMENT_VIDEO_SELECTED: (cmd, data) => {

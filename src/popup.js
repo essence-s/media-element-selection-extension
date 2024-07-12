@@ -1,26 +1,5 @@
-function sendMessage(message) {
-    return new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage(message, (response) => {
-            if (chrome.runtime.lastError) {
-                reject(chrome.runtime.lastError)
-            } else {
-                resolve(response)
-            }
-        })
-    })
-}
-
-function sendMessageTab(tabId, message) {
-    return new Promise((resolve, reject) => {
-        chrome.tabs.sendMessage(parseInt(tabId), message, (response) => {
-            if (chrome.runtime.lastError) {
-                reject(chrome.runtime.lastError.message)
-            } else {
-                resolve(response)
-            }
-        })
-    })
-}
+import { MESSAGE_TYPES } from "./types"
+import { sendMessage, sendMessageTab } from './util'
 
 function renderSelectedVideoElement(element, nc) {
     if (nc == 'no-connect') {
@@ -64,16 +43,6 @@ function resultCheckElementVideoSelected() {
             });
         })
     })
-}
-
-const MESSAGE_TYPES = {
-    ELEMENT_ACTION: 'ELEMENT_ACTION',
-    GET_VIDEOS_DATA: 'GET_VIDEOS_DATA',
-    CHECK_ELEMENT_VIDEO_SELECTED: "CHECK_ELEMENT_VIDEO_SELECTED",
-    RESULT_CHECK_ELEMENT_VIDEO_SELECTED: 'RESULT_CHECK_ELEMENT_VIDEO_SELECTED',
-    ADD_EVENTS_ELEMENT: 'ADD_EVENTS_ELEMENT',
-    REMOVE_EVENTS_ELEMENTS: 'REMOVE_EVENTS_ELEMENTS',
-    CHECK_CONNECTION: 'CHECK_CONNECTION'
 }
 
 let dataG = {
@@ -135,7 +104,7 @@ dataTabs.addEventListener('click', (e) => {
                         tabId: parseInt(tabId),
                         allFrames: true
                     },
-                    files: ["content.js"],
+                    files: ["content.bundle.js"],
                 }).then(() => {
                     console.log("script injected in all jaus")
 
