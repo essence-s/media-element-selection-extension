@@ -100,7 +100,7 @@ chrome.runtime.onMessage.addListener(
                     data: sendData
                 });
             }
-            sendResponse({ data: "Respuesta desde el fondo" });
+            sendResponse({ data: "no se encontro coincidencia" });
         })
         return true
     }
